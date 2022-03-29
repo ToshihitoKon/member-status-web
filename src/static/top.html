@@ -30,9 +30,6 @@
           <option value="bbs">Be Back Soon</option>
         </select>
       </div>
-      <div>
-        <button id="update">Update</button>
-      </div>
       <p>members</p>
       <ul id="members">
       </ul>
@@ -41,14 +38,13 @@
 
     <script type="module">
       import { io } from "https://cdn.socket.io/4.3.2/socket.io.esm.min.js";
-      const socket = io()
+      const socket = io({autoConnect: false})
 
       const username = document.getElementById('username')
       const room_id = document.getElementById('room_id')
       const icon_url = document.getElementById('icon_url')
       const my_status = document.getElementById('my_status')
       const members = document.getElementById('members')
-      const update = document.getElementById('update')
       const join = document.getElementById('join')
       const room_name = document.getElementById('room_name')
       const members_list = {}
@@ -63,8 +59,8 @@
         })
       }
 
-      update.addEventListener('click', (e)=>{
-        console.log('update')
+      my_status.addEventListener('change', (e)=>{
+        console.log('change status')
         socket.emit('user_status', {
           "room_id": room_id.value,
           "username": username.value,
@@ -84,6 +80,7 @@
       join.addEventListener('click', (e)=>{
         console.log('join')
         room_name.innerText = `Room: [${room_id.value}]`
+        socket.connect()
         socket.emit('user_status', {
           "room_id": room_id.value,
           "username": username.value,

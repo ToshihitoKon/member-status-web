@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Socket.IO chat</title>
+  </head>
+  <body>
+    <h1>Member Status Web</h1>
+    <div>
+      <label for="room_id">Room ID</label>
+      <input id="room_id"/>
+    </div>
+    <div>
+      <label for="username">User Name</label>
+      <input id="username"/>
+    </div>
+    <div>
+      <label for="icon_url">Icon URL(Optinal)</label>
+      <input id="icon_url"/>
+    </div>
+    <div>
+      <button id='join'>Join</button>
+    </div>
+    <div>
+      <h2 id="room_name">Room: [not joined]</h2>
+      <div>
+        <label for="my_status">my status</label>
+        <select id="my_status">
+          <option value="ok">OK</option>
+          <option value="afk">Away From Keyboard</option>
+          <option value="bbs">Be Back Soon</option>
+        </select>
+      </div>
+      <div>
+        <button id="update">Update</button>
+      </div>
+      <p>members</p>
+      <ul id="members">
+      </ul>
+    </div>
+    豆知識 AFK(Away From Keyboard: 離席中) BBS(Be Back Soon: 一時離席中)
+
+    <script type="module">
+      import { io } from "https://cdn.socket.io/4.3.2/socket.io.esm.min.js";
+      const socket = io()
+
+      const username = document.getElementById('username')
+      const room_id = document.getElementById('room_id')
+      const icon_url = document.getElementById('icon_url')
+      const my_status = document.getElementById('my_status')
+      const members = document.getElementById('members')
+      const update = document.getElementById('update')
+      const join = document.getElementById('join')
+      const room_name = document.getElementById('room_name')
+      const members_list = {}
+
+      const members_update = ()=>{
+        members.innerHTML = ''
+        Object.keys(members_list).map(key=>{
+          const user = document.createElement('li')
+          const v = members_list[key]
+          user.textContent = `${v.username}: ${v.status}`
+          members.appendChild(user)
+        })
+      }
+
+      update.addEventListener('click', (e)=>{
+        console.log('update')
+        socket.emit('user_status', {
+          "room_id": room_id.value,
+          "username": username.value,
+          "icon_url": icon_url.value,
+          "status": my_status.value,
+        })
+      })
+
+      // 他ユーザーの情報を受け取ったらアップデートする
+      socket.on('user_status', (msg)=>{
+        console.log('on user_status: ', msg)
+        members_list[msg.socket_id] = msg
+        members_update()
+      })
+
+      // roomに入ったら自己紹介と状況を聞く
+      join.addEventListener('click', (e)=>{
+        console.log('join')
+        room_name.innerText = `Room: [${room_id.value}]`
+        socket.emit('user_status', {
+          "room_id": room_id.value,
+          "username": username.value,
+          "icon_url": icon_url.value,
+          "status": my_status.value,
+        })
+        socket.emit('request_status',{})
+      })
+
+      // 近況要求されたらあげる
+      socket.on('request_status', (msg)=>{
+        socket.emit('user_status', {
+          "room_id": room_id.value,
+          "username": username.value,
+          "icon_url": icon_url.value,
+          "status": my_status.value,
+        })
+      })
+
+      // 退出したらけす
+      socket.on('leave', (msg)=>{
+        delete members_list[msg.socket_id]
+        members_update()
+      })
+
+    </script>
+  </body>
+</html>
